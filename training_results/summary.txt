@@ -1,4 +1,4 @@
 Total Episodes: 10000
-Total Training Time: 869.48 seconds
-Average Score: 291.22
-Max Score: 597
+Total Training Time: 3019.97 seconds
+Average Score: 286.33
+Max Score: 650
