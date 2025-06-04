@@ -1,3 +1,4 @@
+
 import numpy as np
 import os
 
@@ -5,6 +6,7 @@ from constants import *
 
 SCORE_SCALE  = 5.0    
 ENERGY_SCALE = -0.001
+DIST_SCALE    = -0.2
 
 class Agent:
     def __init__(self):
@@ -21,6 +23,16 @@ class Agent:
         self.current_features = None
         self.current_action = None
         self.max_q_value = None
+    @staticmethod  
+    def nearest_loot_distance(local_map):
+        """Manhattan distance from agent (center of 9×9 view) to closest gold or loot container."""
+        targets = {STONE_GOLD, DEEPSLATE_GOLD, CHEST, BARREL}
+        ys, xs = np.where(np.isin(local_map, list(targets)))
+        if xs.size == 0:
+            return 0                
+        dists = np.abs(xs - 4) + np.abs(ys - 4)  
+        return dists.min()
+        #USE manhat to get closest 
 
     def initialize_weights(self):
         """
@@ -143,7 +155,8 @@ class Agent:
         self.current_features = self.extract_features(local_map, position, energy, score, gold_count)
         # Step 2: Q-value calculation
         # TODO: Implement this - DONE
-        q_vec = self.current_features @ self.weights    
+        q_vec = self.current_features @ self.weights 
+        self.curr_dist = self.nearest_loot_distance(local_map)   
         self.max_q_value = q_vec.max()
 
         # Step 3: Epsilon-greedy action selection with decaying epsilon. You might modify the epsilon calculation by changing the constant variables in constants.py to achieve better performance
@@ -168,6 +181,16 @@ class Agent:
             delta_score: Change in score
             game_over: Boolean indicating if the game is over
         """
+        if self.prev_features is None:
+            reward = SCORE_SCALE * delta_score + ENERGY_SCALE * delta_energy
+            self.prev_features  = self.current_features
+            self.prev_action    = self.current_action
+            self.prev_reward    = reward
+            self.prev_dist      = self.curr_dist
+            self.prev_game_over = game_over
+            self.step_counter  += 1
+            self.save_checkpoint()
+            return
         # Step 4: Update weights (Q-learning update for previous step)
         if self.prev_features is not None:
             assert None not in [self.prev_action, self.prev_reward, self.prev_game_over]
@@ -193,12 +216,17 @@ class Agent:
         # reward = None
         # pass
         reward = SCORE_SCALE * delta_score + ENERGY_SCALE * delta_energy
+
+        if hasattr(self, "prev_dist"):
+            reward += DIST_SCALE * (self.curr_dist - self.prev_dist)
+
         if self.prev_action is not None and self.prev_action == self.current_action:
             reward -= 0.5
         # Step 6: Update previous variables for next step
         self.prev_features = self.current_features
         self.prev_action = self.current_action
         self.prev_reward = reward
+        self.prev_dist = self.curr_dist
         self.prev_game_over = game_over
 
         # Step 7: Increment step counter and save checkpoint
