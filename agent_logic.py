@@ -137,6 +137,8 @@ class Agent:
         decay_rate = (EPSILON_START - EPSILON_END) / DECAY_STEPS
         epsilon = max(EPSILON_END, EPSILON_START - decay_rate * self.step_counter)
         return epsilon
+        # τ = 60000  # decay time constant; tweak between 30k–100k
+        # return EPSILON_END + (EPSILON_START - EPSILON_END) * np.exp(-self.step_counter / τ)
 
     def agent_logic(self, local_map, position, energy, score, gold_count, training):
         """
