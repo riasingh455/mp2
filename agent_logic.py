@@ -12,7 +12,7 @@ class Agent:
     def __init__(self):
         """Initialize the agent with weights and step counter from checkpoint or defaults."""
         self.weights, self.step_counter = self.load_checkpoint()
-
+        self.weights = self.initialize_weights()
         # Previous variables for Q-learning update
         self.prev_features = None
         self.prev_action = None
